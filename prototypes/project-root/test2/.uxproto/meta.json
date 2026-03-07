@@ -1,0 +1,23 @@
+{
+  "prototypeName": "test2",
+  "sourceProject": "project-root",
+  "status": "active",
+  "createdFrom": {
+    "sourcePath": "projects/project-root-repo",
+    "sourceBranch": "main",
+    "sourceCommit": "30b52a0e814f87335c4f99c1b7aa370751b81ef1",
+    "appPath": "."
+  },
+  "lastSyncedSourceCommit": "30b52a0e814f87335c4f99c1b7aa370751b81ef1",
+  "versioning": {
+    "currentVersion": 0
+  },
+  "storage": {
+    "gitDir": ".ux-proto/repos/project-root/test2.git"
+  },
+  "mock": {
+    "enabled": false,
+    "seedPath": ".uxproto/mock/seed.json",
+    "statePath": ".uxproto/mock/state.json"
+  }
+}

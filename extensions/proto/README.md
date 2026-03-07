@@ -14,6 +14,7 @@ Interactive sidebar + command-palette extension for `ux-proto` workflows.
 ## Commands
 
 - `Proto: Bootstrap Sources`
+- `Proto: Save State`
 - `Proto: Onboard Repository`
 - `Proto: Create Prototype`
 - `Proto: Save Version`
@@ -34,3 +35,4 @@ Interactive sidebar + command-palette extension for `ux-proto` workflows.
 
 - Extension locates workspace root by searching for `.ux-proto/workspace.json`.
 - Commands run in an integrated terminal so output is visible and long-running processes remain interactive.
+- `Save State` commits and pushes the workspace repo using the default message `chore: checkpoint ux-proto workspace state`, while excluding `projects/`.

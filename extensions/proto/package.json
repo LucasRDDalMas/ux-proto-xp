@@ -14,6 +14,7 @@
   "activationEvents": [
     "onView:uxProto.sidebar",
     "onCommand:uxProto.makeSources",
+    "onCommand:uxProto.saveState",
     "onCommand:uxProto.onboardRepository",
     "onCommand:uxProto.create",
     "onCommand:uxProto.save",
@@ -32,7 +33,7 @@
         {
           "id": "uxProto",
           "title": "Proto",
-          "icon": "media/proto.svg"
+          "icon": "media/proto-branch.svg"
         }
       ]
     },
@@ -48,6 +49,10 @@
       {
         "command": "uxProto.makeSources",
         "title": "Proto: Bootstrap Sources"
+      },
+      {
+        "command": "uxProto.saveState",
+        "title": "Proto: Save State"
       },
       {
         "command": "uxProto.onboardRepository",

@@ -89,6 +89,13 @@ function runRawCommand(rootPath, command) {
   terminal.sendText(command);
 }
 
+function saveWorkspaceState(rootPath) {
+  runRawCommand(
+    rootPath,
+    "git add -A -- . ':(exclude)projects' && (git diff --cached --quiet && echo 'No workspace changes to save.' || (git commit -m 'chore: checkpoint ux-proto workspace state' && git push))"
+  );
+}
+
 function readProjects(rootPath) {
   const projectsPath = path.join(rootPath, 'config', 'projects.json');
   if (!fs.existsSync(projectsPath)) {
@@ -596,6 +603,7 @@ class ProtoSidebarProvider {
     if (element.nodeType === 'section-actions') {
       return [
         this.createActionNode('Bootstrap Sources', 'uxProto.makeSources', undefined, 'cloud-download'),
+        this.createActionNode('Save State', 'uxProto.saveState', undefined, 'cloud-upload'),
         this.createActionNode('Onboard Repository', 'uxProto.onboardRepository', undefined, 'repo-create'),
         this.createActionNode('Create Prototype', 'uxProto.create', undefined, 'add'),
         this.createActionNode('List Active', 'uxProto.list', undefined, 'list-tree'),
@@ -747,6 +755,11 @@ function activate(context) {
   register(context, sidebarProvider, 'uxProto.makeSources', async () => {
     const rootPath = ensureRootOrThrow();
     runRawCommand(rootPath, 'make sources');
+  });
+
+  register(context, sidebarProvider, 'uxProto.saveState', async () => {
+    const rootPath = ensureRootOrThrow();
+    saveWorkspaceState(rootPath);
   });
 
   register(context, sidebarProvider, 'uxProto.onboardRepository', async () => {

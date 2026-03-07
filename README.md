@@ -162,12 +162,14 @@ The extension is located at `extensions/proto`.
 5. In that second window, open the `Proto` icon in the Activity Bar sidebar.
 6. Use the `Actions` and `Prototypes` tree items, or run commands from Command Palette (`Cmd+Shift+P`) like:
    - `Proto: Bootstrap Sources`
+   - `Proto: Save State`
    - `Proto: Onboard Repository`
    - `Proto: Create Prototype`
    - `Proto: Save Version`
    - `Proto: Sync Prototype`
 
 The sidebar `Actions` section can also onboard a new repository by appending a project entry to `config/projects.json` and optionally running `make sources` immediately.
+`Save State` commits and pushes this workspace repo with the default checkpoint message `chore: checkpoint ux-proto workspace state`, while excluding `projects/`.
 
 Note:
 - Extension development always runs in a separate window from the one where you edit the extension source.

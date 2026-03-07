@@ -1,4 +1,5 @@
 node_modules
+projects/
 .ux-proto/repos/
 .ux-proto/tmp/
 .DS_Store
