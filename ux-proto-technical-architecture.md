@@ -74,7 +74,8 @@ Notes:
 {
   "projects": {
     "project-a": {
-      "sourcePath": "project-a-repo",
+      "sourcePath": "projects/project-a-repo",
+      "sourceUrl": "https://github.com/your-org/project-a.git",
       "sourceBranch": "main",
       "appPath": ".",
       "installCommand": ["npm", "install"],
@@ -93,6 +94,7 @@ Notes:
 Rules:
 
 - `sourcePath` is relative to workspace root.
+- `sourceUrl` is required and is the canonical remote used by `make sources`.
 - `sourceBranch` is required and used by both `create` and `sync`.
 - `appPath` is relative to the source repo root.
 - `installCommand` and `devCommand` are argv arrays (no shell string interpolation).
@@ -107,7 +109,7 @@ Canonical schema:
   "sourceProject": "project-a",
   "status": "active",
   "createdFrom": {
-    "sourcePath": "project-a-repo",
+    "sourcePath": "projects/project-a-repo",
     "sourceBranch": "main",
     "sourceCommit": "abc1234",
     "appPath": "."

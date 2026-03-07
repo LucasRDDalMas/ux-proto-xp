@@ -1,0 +1,126 @@
+{
+  "name": "proto",
+  "displayName": "Proto",
+  "description": "Interactive VS Code commands for ux-proto workflows.",
+  "version": "0.0.1",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onView:uxProto.sidebar",
+    "onCommand:uxProto.makeSources",
+    "onCommand:uxProto.onboardRepository",
+    "onCommand:uxProto.create",
+    "onCommand:uxProto.save",
+    "onCommand:uxProto.history",
+    "onCommand:uxProto.rollback",
+    "onCommand:uxProto.list",
+    "onCommand:uxProto.listArchive",
+    "onCommand:uxProto.run",
+    "onCommand:uxProto.sync",
+    "onCommand:uxProto.archive",
+    "onCommand:uxProto.refreshSidebar"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "uxProto",
+          "title": "Proto",
+          "icon": "media/proto.svg"
+        }
+      ]
+    },
+    "views": {
+      "uxProto": [
+        {
+          "id": "uxProto.sidebar",
+          "name": "Workflows"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "uxProto.makeSources",
+        "title": "Proto: Bootstrap Sources"
+      },
+      {
+        "command": "uxProto.onboardRepository",
+        "title": "Proto: Onboard Repository"
+      },
+      {
+        "command": "uxProto.create",
+        "title": "Proto: Create Prototype"
+      },
+      {
+        "command": "uxProto.save",
+        "title": "Proto: Save Version"
+      },
+      {
+        "command": "uxProto.history",
+        "title": "Proto: Show History"
+      },
+      {
+        "command": "uxProto.rollback",
+        "title": "Proto: Rollback Version"
+      },
+      {
+        "command": "uxProto.list",
+        "title": "Proto: List Active Prototypes"
+      },
+      {
+        "command": "uxProto.listArchive",
+        "title": "Proto: List Archived Prototypes"
+      },
+      {
+        "command": "uxProto.run",
+        "title": "Proto: Run Prototype"
+      },
+      {
+        "command": "uxProto.sync",
+        "title": "Proto: Sync Prototype"
+      },
+      {
+        "command": "uxProto.archive",
+        "title": "Proto: Archive Prototype"
+      },
+      {
+        "command": "uxProto.refreshSidebar",
+        "title": "Proto: Refresh Sidebar",
+        "icon": {
+          "light": "media/refresh-light.svg",
+          "dark": "media/refresh-dark.svg"
+        }
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "uxProto.refreshSidebar",
+          "when": "view == uxProto.sidebar",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Proto Extension",
+      "properties": {
+        "uxProto.cliCommand": {
+          "type": "string",
+          "default": "node cli/src/index.js",
+          "description": "CLI command used to run proto workflows from the workspace root."
+        },
+        "uxProto.terminalName": {
+          "type": "string",
+          "default": "ux-proto",
+          "description": "Terminal name used by Proto interactive commands."
+        }
+      }
+    }
+  }
+}

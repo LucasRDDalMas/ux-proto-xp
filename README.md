@@ -11,6 +11,41 @@ Prototype orchestration workspace for UX.
 
 This repo uses `.ux-proto/workspace.json` as the workspace marker.
 
+## Flow after cloning
+
+1. Enter the workspace.
+
+```bash
+cd ux-proto-xp
+```
+
+2. Rehydrate source repos from `config/projects.json`.
+
+```bash
+make sources
+```
+
+3. Create your first prototype.
+
+```bash
+node cli/src/index.js create project-root my-prototype
+```
+
+4. Move into the prototype and run/save.
+
+```bash
+cd prototypes/project-root/my-prototype
+node ../../../cli/src/index.js run
+node ../../../cli/src/index.js save --comment "first change"
+```
+
+5. Check active prototypes from workspace root.
+
+```bash
+cd ../../..
+node cli/src/index.js list
+```
+
 ## Configure projects
 
 Edit `config/projects.json`:
@@ -20,6 +55,7 @@ Edit `config/projects.json`:
   "projects": {
     "project-a": {
       "sourcePath": "projects/project-a-repo",
+      "sourceUrl": "https://github.com/your-org/project-a.git",
       "sourceBranch": "main",
       "appPath": ".",
       "installCommand": ["npm", "install"],
@@ -108,6 +144,40 @@ make sources
 
 Behavior:
 
-- If a repo is missing, it is cloned.
-- If a repo exists, it is updated with `fetch` + `pull --ff-only`.
+- Uses `sourceUrl`, `sourcePath`, and `sourceBranch` from `config/projects.json`.
+- If a repo is missing, it is cloned from `sourceUrl`.
+- If a repo exists, it is updated with `fetch` + `checkout <sourceBranch>` + `pull --ff-only`.
 - If a target folder exists but is not a Git repo, the command fails clearly.
+
+## VS Code extension (interactive commands)
+
+The extension is located at `extensions/proto`.
+
+### Run in Extension Development Host
+
+1. Open this repository in VS Code.
+2. Select the debug config `Run Proto Extension`.
+3. Press `F5` (or Run > Start Debugging).
+4. VS Code opens a second Extension Development Host window with this same `ux-proto-xp` repo loaded as the workspace.
+5. In that second window, open the `Proto` icon in the Activity Bar sidebar.
+6. Use the `Actions` and `Prototypes` tree items, or run commands from Command Palette (`Cmd+Shift+P`) like:
+   - `Proto: Bootstrap Sources`
+   - `Proto: Onboard Repository`
+   - `Proto: Create Prototype`
+   - `Proto: Save Version`
+   - `Proto: Sync Prototype`
+
+The sidebar `Actions` section can also onboard a new repository by appending a project entry to `config/projects.json` and optionally running `make sources` immediately.
+
+Note:
+- Extension development always runs in a separate window from the one where you edit the extension source.
+- This workspace includes `.vscode/launch.json` with `--extensionDevelopmentPath=${workspaceFolder}/extensions/proto` and `${workspaceFolder}` so VS Code loads the correct extension and opens the project at the same time.
+- If you want to use the extension in a single normal VS Code window, install the `.vsix` instead of using `F5`.
+
+### Optional: install as local `.vsix`
+
+```bash
+cd extensions/proto
+npx @vscode/vsce package
+code --install-extension proto-0.0.1.vsix
+```

@@ -21,7 +21,7 @@ function createMetadata({ projectName, prototypeName, projectConfig, sourceCommi
     },
     lastSyncedSourceCommit: sourceCommit,
     versioning: {
-      currentVersion: -1
+      currentVersion: 0
     },
     storage: {
       gitDir: gitDirRel

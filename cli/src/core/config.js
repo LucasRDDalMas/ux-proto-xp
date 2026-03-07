@@ -26,7 +26,7 @@ export function getProjectConfig(workspaceRoot, projectName) {
     throw new Error(`Project "${projectName}" is not onboarded in config/projects.json.`);
   }
 
-  const required = ['sourcePath', 'sourceBranch', 'appPath', 'installCommand', 'devCommand'];
+  const required = ['sourcePath', 'sourceUrl', 'sourceBranch', 'appPath', 'installCommand', 'devCommand'];
   for (const key of required) {
     if (!(key in project)) {
       throw new Error(`Project "${projectName}" is missing required key "${key}".`);

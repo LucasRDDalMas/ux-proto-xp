@@ -2,6 +2,7 @@
   "projects": {
     "project-root": {
       "sourcePath": "projects/project-root-repo",
+      "sourceUrl": "https://github.com/LucasRDDalMas/project-root.git",
       "sourceBranch": "main",
       "appPath": ".",
       "installCommand": [
@@ -18,6 +19,7 @@
     },
     "proto-monorepo": {
       "sourcePath": "projects/proto-monorepo-repo",
+      "sourceUrl": "https://github.com/LucasRDDalMas/proto-monorepo.git",
       "sourceBranch": "main",
       "appPath": "project-mono-a",
       "installCommand": [
