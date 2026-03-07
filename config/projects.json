@@ -1,0 +1,36 @@
+{
+  "projects": {
+    "project-root": {
+      "sourcePath": "projects/project-root-repo",
+      "sourceBranch": "main",
+      "appPath": ".",
+      "installCommand": [
+        "pnpm",
+        "install"
+      ],
+      "devCommand": [
+        "pnpm",
+        "dev"
+      ],
+      "mock": {
+        "enabled": false
+      }
+    },
+    "proto-monorepo": {
+      "sourcePath": "projects/proto-monorepo-repo",
+      "sourceBranch": "main",
+      "appPath": "project-mono-a",
+      "installCommand": [
+        "pnpm",
+        "install"
+      ],
+      "devCommand": [
+        "pnpm",
+        "dev"
+      ],
+      "mock": {
+        "enabled": false
+      }
+    }
+  }
+}

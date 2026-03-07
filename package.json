@@ -1,0 +1,12 @@
+{
+  "name": "ux-proto",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "proto": "cli/src/index.js"
+  },
+  "scripts": {
+    "proto": "node cli/src/index.js"
+  }
+}
