@@ -1,0 +1,24 @@
+{
+  "versions": [
+    {
+      "number": 0,
+      "commit": "f6c6b96",
+      "comment": "initial"
+    },
+    {
+      "number": 1,
+      "commit": "54aafa7",
+      "comment": "root change"
+    },
+    {
+      "number": 2,
+      "commit": "6bbdda8",
+      "comment": "rollback to v0"
+    },
+    {
+      "number": 3,
+      "commit": "cfd9e72",
+      "comment": "sync from project-root@30b52a0"
+    }
+  ]
+}

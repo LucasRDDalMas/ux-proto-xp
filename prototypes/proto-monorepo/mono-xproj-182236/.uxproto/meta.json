@@ -1,0 +1,23 @@
+{
+  "prototypeName": "mono-xproj-182236",
+  "sourceProject": "proto-monorepo",
+  "status": "active",
+  "createdFrom": {
+    "sourcePath": "projects/proto-monorepo-repo",
+    "sourceBranch": "main",
+    "sourceCommit": "c2c0bae48ef1759df571f6b2318e3d515af72cd6",
+    "appPath": "project-mono-a"
+  },
+  "lastSyncedSourceCommit": "c2c0bae48ef1759df571f6b2318e3d515af72cd6",
+  "versioning": {
+    "currentVersion": 1
+  },
+  "storage": {
+    "gitDir": ".ux-proto/repos/proto-monorepo/mono-xproj-182236.git"
+  },
+  "mock": {
+    "enabled": false,
+    "seedPath": ".uxproto/mock/seed.json",
+    "statePath": ".uxproto/mock/state.json"
+  }
+}
