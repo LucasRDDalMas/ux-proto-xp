@@ -165,11 +165,13 @@ The extension is located at `extensions/proto`.
    - `Proto: Save State`
    - `Proto: Onboard Repository`
    - `Proto: Create Prototype`
+   - `Proto: Open Claude`
    - `Proto: Save Version`
    - `Proto: Sync Prototype`
 
 The sidebar `Actions` section can also onboard a new repository by appending a project entry to `config/projects.json` and optionally running `make sources` immediately.
-`Save State` commits and pushes this workspace repo with the default checkpoint message `chore: checkpoint ux-proto workspace state`, while excluding `projects/`.
+`Save State` stages normal workspace changes with `git add -A`, then commits and pushes with the default checkpoint message `chore: checkpoint ux-proto workspace state`. `projects/` stays out because it is ignored by `.gitignore`.
+Each prototype in the sidebar also exposes a `Versions` subtree, and each version row has an inline rollback action with confirmation.
 
 Note:
 - Extension development always runs in a separate window from the one where you edit the extension source.

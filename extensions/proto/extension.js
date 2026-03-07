@@ -89,10 +89,17 @@ function runRawCommand(rootPath, command) {
   terminal.sendText(command);
 }
 
+function runTerminalCommand(rootPath, cwdPath, command) {
+  const terminal = getTerminal(rootPath);
+  terminal.show(true);
+  terminal.sendText(`cd ${shellQuote(cwdPath)}`);
+  terminal.sendText(command);
+}
+
 function saveWorkspaceState(rootPath) {
   runRawCommand(
     rootPath,
-    "git add -A -- . ':(exclude)projects' && (git diff --cached --quiet && echo 'No workspace changes to save.' || (git commit -m 'chore: checkpoint ux-proto workspace state' && git push))"
+    "git add -A && (git diff --cached --quiet && echo 'No workspace changes to save.' || (git commit -m 'chore: checkpoint ux-proto workspace state' && git push))"
   );
 }
 
@@ -249,6 +256,30 @@ function listPrototypes(rootPath) {
   return items.sort((a, b) => a.label.localeCompare(b.label));
 }
 
+function listVersionsForPrototype(prototype) {
+  const versionsPath = path.join(prototype.prototypeRoot, '.uxproto', 'versions', 'index.json');
+  const metaPath = path.join(prototype.prototypeRoot, '.uxproto', 'meta.json');
+
+  if (!fs.existsSync(versionsPath)) {
+    return [];
+  }
+
+  const parsed = safeReadJson(versionsPath) || {};
+  const versions = Array.isArray(parsed.versions) ? parsed.versions : [];
+  const meta = safeReadJson(metaPath) || {};
+  const currentVersion = meta.versioning?.currentVersion;
+
+  return [...versions]
+    .reverse()
+    .map((entry) => ({
+      prototype,
+      number: entry.number,
+      comment: entry.comment || '',
+      commit: entry.commit || '',
+      isCurrent: entry.number === currentVersion
+    }));
+}
+
 function groupPrototypesByProject(rootPath) {
   const prototypes = listPrototypes(rootPath);
   const groups = new Map();
@@ -339,35 +370,6 @@ async function resolvePrototype(rootPath, maybePrototype, placeHolder) {
     return normalized;
   }
   return pickPrototype(rootPath, placeHolder);
-}
-
-async function pickVersion(prototype) {
-  const versionsPath = path.join(prototype.prototypeRoot, '.uxproto', 'versions', 'index.json');
-  if (!fs.existsSync(versionsPath)) {
-    vscode.window.showErrorMessage(`Missing versions file for ${prototype.label}`);
-    return null;
-  }
-
-  const parsed = JSON.parse(fs.readFileSync(versionsPath, 'utf8'));
-  const versions = Array.isArray(parsed.versions) ? parsed.versions : [];
-  if (versions.length === 0) {
-    vscode.window.showErrorMessage(`No versions found for ${prototype.label}`);
-    return null;
-  }
-
-  const selected = await vscode.window.showQuickPick(
-    [...versions]
-      .reverse()
-      .map((entry) => ({
-        label: `v${entry.number}`,
-        description: entry.comment || '',
-        detail: entry.commit ? `commit ${entry.commit}` : '',
-        versionNumber: entry.number
-      })),
-    { placeHolder: `Select rollback target for ${prototype.label}` }
-  );
-
-  return selected?.versionNumber ?? null;
 }
 
 async function promptForOnboarding(rootPath) {
@@ -524,6 +526,8 @@ class ProtoSidebarNode extends vscode.TreeItem {
     this.nodeType = options.nodeType;
     this.projectName = options.projectName;
     this.prototype = options.prototype;
+    this.versionNumber = options.versionNumber;
+    this.versionEntry = options.versionEntry;
     this.description = options.description;
     this.tooltip = options.tooltip;
     this.command = options.command;
@@ -661,12 +665,55 @@ class ProtoSidebarProvider {
     if (element.nodeType === 'prototype') {
       return [
         this.createActionNode('Run', 'uxProto.run', element.prototype, 'play-circle'),
+        this.createActionNode('Open Claude', 'uxProto.openClaude', element.prototype, 'comment-discussion'),
         this.createActionNode('Save Version', 'uxProto.save', element.prototype, 'save'),
-        this.createActionNode('Show History', 'uxProto.history', element.prototype, 'history'),
-        this.createActionNode('Rollback Version', 'uxProto.rollback', element.prototype, 'discard'),
+        new ProtoSidebarNode({
+          nodeType: 'versions-group',
+          label: 'Versions',
+          description: formatVersion(element.prototype.version),
+          collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
+          iconPath: new vscode.ThemeIcon('history'),
+          prototype: element.prototype
+        }),
         this.createActionNode('Sync', 'uxProto.sync', element.prototype, 'sync'),
         this.createActionNode('Archive', 'uxProto.archive', element.prototype, 'archive')
       ];
+    }
+
+    if (element.nodeType === 'versions-group') {
+      const versions = listVersionsForPrototype(element.prototype);
+      if (versions.length === 0) {
+        return [
+          new ProtoSidebarNode({
+            nodeType: 'info',
+            label: 'No versions yet',
+            description: 'Save the prototype to create history',
+            iconPath: new vscode.ThemeIcon('circle-slash')
+          })
+        ];
+      }
+
+      return versions.map((entry) => {
+        const descriptionParts = [];
+        if (entry.isCurrent) {
+          descriptionParts.push('current');
+        }
+        if (entry.comment) {
+          descriptionParts.push(entry.comment);
+        }
+
+        return new ProtoSidebarNode({
+          nodeType: 'version',
+          label: `v${entry.number}`,
+          description: descriptionParts.join(' • '),
+          tooltip: entry.commit ? `commit ${entry.commit}` : undefined,
+          iconPath: new vscode.ThemeIcon(entry.isCurrent ? 'circle-large-filled' : 'history'),
+          contextValue: entry.isCurrent ? 'protoVersionCurrent' : 'protoVersionRollbackable',
+          prototype: entry.prototype,
+          versionNumber: entry.number,
+          versionEntry: entry
+        });
+      });
     }
 
     return [];
@@ -842,26 +889,13 @@ function activate(context) {
     runCommand(rootPath, prototype.prototypeRoot, args);
   });
 
-  register(context, sidebarProvider, 'uxProto.history', async (prototypeArg) => {
+  register(context, sidebarProvider, 'uxProto.rollbackToVersion', async (versionArg) => {
     const rootPath = ensureRootOrThrow();
-    const prototype = await resolvePrototype(rootPath, prototypeArg, 'Select prototype to view history');
-    if (!prototype) {
-      return;
-    }
+    const prototype = normalizePrototypeArgument(rootPath, versionArg);
+    const versionNumber = versionArg?.versionNumber ?? versionArg?.versionEntry?.number;
 
-    runCommand(rootPath, prototype.prototypeRoot, ['history']);
-  });
-
-  register(context, sidebarProvider, 'uxProto.rollback', async (prototypeArg) => {
-    const rootPath = ensureRootOrThrow();
-    const prototype = await resolvePrototype(rootPath, prototypeArg, 'Select prototype to rollback');
-    if (!prototype) {
-      return;
-    }
-
-    const versionNumber = await pickVersion(prototype);
-    if (versionNumber === null) {
-      return;
+    if (!prototype || !Number.isInteger(versionNumber)) {
+      throw new Error('Version selection is invalid.');
     }
 
     const confirm = await vscode.window.showWarningMessage(
@@ -894,6 +928,16 @@ function activate(context) {
     }
 
     runCommand(rootPath, prototype.prototypeRoot, ['run']);
+  });
+
+  register(context, sidebarProvider, 'uxProto.openClaude', async (prototypeArg) => {
+    const rootPath = ensureRootOrThrow();
+    const prototype = await resolvePrototype(rootPath, prototypeArg, 'Select prototype to open in Claude');
+    if (!prototype) {
+      return;
+    }
+
+    runTerminalCommand(rootPath, prototype.prototypeRoot, 'claude');
   });
 
   register(context, sidebarProvider, 'uxProto.sync', async (prototypeArg) => {

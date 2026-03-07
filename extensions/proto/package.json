@@ -2,7 +2,7 @@
   "name": "proto",
   "displayName": "Proto",
   "description": "Interactive VS Code commands for ux-proto workflows.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "local",
   "engines": {
     "vscode": "^1.85.0"
@@ -18,11 +18,11 @@
     "onCommand:uxProto.onboardRepository",
     "onCommand:uxProto.create",
     "onCommand:uxProto.save",
-    "onCommand:uxProto.history",
-    "onCommand:uxProto.rollback",
+    "onCommand:uxProto.rollbackToVersion",
     "onCommand:uxProto.list",
     "onCommand:uxProto.listArchive",
     "onCommand:uxProto.run",
+    "onCommand:uxProto.openClaude",
     "onCommand:uxProto.sync",
     "onCommand:uxProto.archive",
     "onCommand:uxProto.refreshSidebar"
@@ -33,7 +33,7 @@
         {
           "id": "uxProto",
           "title": "Proto",
-          "icon": "media/proto-branch.svg"
+          "icon": "media/uxp-icon.svg"
         }
       ]
     },
@@ -67,12 +67,12 @@
         "title": "Proto: Save Version"
       },
       {
-        "command": "uxProto.history",
-        "title": "Proto: Show History"
-      },
-      {
-        "command": "uxProto.rollback",
-        "title": "Proto: Rollback Version"
+        "command": "uxProto.rollbackToVersion",
+        "title": "Proto: Rollback To Version",
+        "icon": {
+          "light": "media/rollback-light.svg",
+          "dark": "media/rollback-dark.svg"
+        }
       },
       {
         "command": "uxProto.list",
@@ -85,6 +85,10 @@
       {
         "command": "uxProto.run",
         "title": "Proto: Run Prototype"
+      },
+      {
+        "command": "uxProto.openClaude",
+        "title": "Proto: Open Claude"
       },
       {
         "command": "uxProto.sync",
@@ -109,6 +113,13 @@
           "command": "uxProto.refreshSidebar",
           "when": "view == uxProto.sidebar",
           "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "uxProto.rollbackToVersion",
+          "when": "view == uxProto.sidebar && viewItem == protoVersionRollbackable",
+          "group": "inline"
         }
       ]
     },
