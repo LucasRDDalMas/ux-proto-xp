@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { copyDirFiltered, ensureDir, removeIfExists, replaceDirectoryContents } from './fs.js';
-import { runGit, isWorkTreeClean } from './git.js';
+import { runGit, isWorkTreeClean, listIgnoredPaths } from './git.js';
 import { saveVersion } from './versioning.js';
 import { saveMeta } from './prototype.js';
 
@@ -112,6 +112,7 @@ export function syncPrototype(options) {
   const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'uxproto-sync-'));
 
   try {
+    const ignoredPaths = listIgnoredPaths(gitDir, prototypeRoot);
     const basePath = path.join(tmpRoot, 'base');
     const oursPath = path.join(tmpRoot, 'ours');
     const theirsPath = path.join(tmpRoot, 'theirs');
@@ -146,6 +147,7 @@ export function syncPrototype(options) {
 
     replaceDirectoryContents(prototypeRoot, merge.mergeRepoPath, {
       preserveTargetNames: new Set(['.uxproto']),
+      preserveRelativePaths: ignoredPaths,
       excludeSourceNames: new Set(['.git'])
     });
 

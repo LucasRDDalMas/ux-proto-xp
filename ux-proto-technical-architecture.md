@@ -272,6 +272,7 @@ Flow:
 2. Validate requested version exists in `versions/index.json`.
 3. Resolve target commit hash for that version.
 4. Replace working tree files with target commit content.
+   - preserve ignored local-only paths such as `node_modules/`, `.next/`, and `.env.local`
 5. Immediately create a new save version (`vNext`) with comment `rollback to v<target>`.
 6. Update metadata and versions registry.
 
@@ -332,6 +333,7 @@ Flow:
    - return conflict error
 8. If merge succeeds:
    - apply merged tree to prototype work tree
+   - preserve ignored local-only paths such as `node_modules/`, `.next/`, and `.env.local`
    - update `lastSyncedSourceCommit` to latest source commit
    - create new save version with comment `sync from <sourceProject>@<shortCommit>`
 9. Remove temp repo.

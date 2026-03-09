@@ -48,17 +48,47 @@ export function copyDirFiltered(sourceDir, destinationDir, options = {}) {
 export function replaceDirectoryContents(targetDir, sourceDir, options = {}) {
   const {
     preserveTargetNames = new Set(),
-    excludeSourceNames = new Set()
+    excludeSourceNames = new Set(),
+    preserveRelativePaths = new Set()
   } = options;
 
   ensureDir(targetDir);
 
-  for (const entry of fs.readdirSync(targetDir)) {
-    if (preserveTargetNames.has(entry)) {
-      continue;
+  function hasPreservedDescendant(relativePath) {
+    for (const preservedPath of preserveRelativePaths) {
+      if (
+        preservedPath === relativePath ||
+        preservedPath.startsWith(`${relativePath}${path.sep}`)
+      ) {
+        return true;
+      }
     }
-    removeIfExists(path.join(targetDir, entry));
+    return false;
   }
+
+  function cleanTargetDirectory(currentDir, relativeDir = '') {
+    for (const entry of fs.readdirSync(currentDir)) {
+      const absolutePath = path.join(currentDir, entry);
+      const relativePath = relativeDir ? path.join(relativeDir, entry) : entry;
+
+      if (preserveTargetNames.has(entry) && relativeDir === '') {
+        continue;
+      }
+
+      if (preserveRelativePaths.has(relativePath)) {
+        continue;
+      }
+
+      if (hasPreservedDescendant(relativePath) && fs.statSync(absolutePath).isDirectory()) {
+        cleanTargetDirectory(absolutePath, relativePath);
+        continue;
+      }
+
+      removeIfExists(absolutePath);
+    }
+  }
+
+  cleanTargetDirectory(targetDir);
 
   for (const entry of fs.readdirSync(sourceDir)) {
     if (excludeSourceNames.has(entry)) {

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { isWorkTreeClean, runGit } from '../core/git.js';
+import { isWorkTreeClean, listIgnoredPaths, runGit } from '../core/git.js';
 import { withPrototypeLock } from '../core/lock.js';
 import { replaceDirectoryContents, removeIfExists } from '../core/fs.js';
 import { requirePrototypeContext, loadMeta, loadVersions, saveVersions } from '../core/prototype.js';
@@ -40,12 +40,16 @@ export function rollbackCommand(args) {
     const tempWorktree = path.join(tmpRoot, 'snapshot-worktree');
 
     try {
+      const ignoredPaths = listIgnoredPaths(gitDir, context.prototypeRoot);
+
       runGit(['worktree', 'add', '--detach', tempWorktree, target.commit], {
         gitDir,
         workTree: context.prototypeRoot
       });
 
       replaceDirectoryContents(context.prototypeRoot, tempWorktree, {
+        preserveTargetNames: new Set(['.uxproto']),
+        preserveRelativePaths: ignoredPaths,
         excludeSourceNames: new Set(['.git'])
       });
 

@@ -64,3 +64,27 @@ export function isWorkTreeClean(gitDir, workTree) {
   const output = runGit(['status', '--porcelain'], { gitDir, workTree }).stdout.trim();
   return output.length === 0;
 }
+
+export function listIgnoredPaths(gitDir, workTree) {
+  const output = runGit([
+    'ls-files',
+    '--others',
+    '--ignored',
+    '--exclude-standard',
+    '--directory',
+    '--no-empty-directory',
+    '-z'
+  ], { gitDir, workTree }).stdout;
+
+  if (!output) {
+    return new Set();
+  }
+
+  return new Set(
+    output
+      .split('\0')
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .map((entry) => entry.replace(/[\\/]+$/, ''))
+  );
+}

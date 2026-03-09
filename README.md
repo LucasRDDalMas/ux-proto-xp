@@ -116,6 +116,7 @@ Or install globally from this folder and use `proto`.
 ### `proto rollback <version-number>`
 
 - restores files to target version state
+- preserves ignored local-only paths such as `node_modules/`, `.next/`, and `.env.local`
 - immediately creates a new version (`vNext`)
 
 ### `proto sync`
@@ -124,6 +125,7 @@ Or install globally from this folder and use `proto`.
 - updates source repo
 - performs three-way merge (`lastSyncedSourceCommit`, prototype current, latest source)
 - aborts on conflict with no prototype file mutation
+- preserves ignored local-only paths such as `node_modules/`, `.next/`, and `.env.local`
 - on success applies merged tree and creates a new save version
 
 ### `proto list [archive]`

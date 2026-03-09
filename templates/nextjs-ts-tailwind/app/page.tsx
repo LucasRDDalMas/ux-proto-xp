@@ -1,39 +1,43 @@
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#dbeafe,transparent_35%),linear-gradient(180deg,#f8fafc_0%,#ffffff_50%,#eef2ff_100%)] px-6 py-10 text-slate-950 sm:px-10 lg:px-16">
-      <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-5xl flex-col justify-between gap-12 rounded-[2.5rem] border border-slate-200/80 bg-white/80 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:p-10 lg:p-14">
-        <div className="max-w-3xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.35em] text-sky-600">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
+      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
+        <div className="rounded-full border border-black/10 px-4 py-2 text-sm font-semibold tracking-[0.2em] text-zinc-600 uppercase dark:border-white/15 dark:text-zinc-400">
+          ux-proto
+        </div>
+        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
+          <p className="rounded-full border border-black/10 px-3 py-1 text-sm font-medium text-zinc-600 dark:border-white/15 dark:text-zinc-400">
             ux-proto template
           </p>
-          <h1 className="mt-6 text-5xl font-semibold tracking-tight sm:text-6xl">
-            Start shaping the flow from a clean Next.js baseline.
+          <h1 className="max-w-xl text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
+            Start a new prototype from the official Next.js baseline.
           </h1>
-          <p className="mt-6 text-lg leading-8 text-slate-600">
-            This prototype was created from the built-in Next.js + TypeScript + Tailwind template.
-            It has local version history, but it does not sync against an upstream source repository.
+          <p className="max-w-xl text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+            This starter was generated with <code>create-next-app</code> and
+            stored as a built-in ux-proto template. Use it when you want a
+            clean Next.js, TypeScript, and Tailwind app without any upstream
+            sync behavior.
           </p>
         </div>
-
-        <section className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-            <h2 className="text-lg font-semibold text-slate-950">What you get</h2>
-            <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-600">
-              <li>Next.js App Router</li>
-              <li>TypeScript enabled</li>
-              <li>Tailwind CSS v4 ready</li>
-            </ul>
-          </div>
-          <div className="rounded-3xl border border-slate-200 bg-white p-6">
-            <h2 className="text-lg font-semibold text-slate-950">What to do next</h2>
-            <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-600">
-              <li>Edit <code>app/page.tsx</code></li>
-              <li>Run <code>pnpm dev</code></li>
-              <li>Use Proto Save Version as you iterate</li>
-            </ul>
-          </div>
-        </section>
-      </div>
-    </main>
+        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+          <a
+            className="flex h-12 w-full items-center justify-center rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
+            href="https://nextjs.org/docs"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Next Docs
+          </a>
+          <a
+            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
+            href="https://tailwindcss.com/docs"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Tailwind Docs
+          </a>
+        </div>
+      </main>
+    </div>
   );
 }
