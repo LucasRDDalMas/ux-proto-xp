@@ -1,9 +1,10 @@
 import path from 'node:path';
-import { getProjectConfig } from '../core/config.js';
 import { loadMeta, parsePrototypeIdentity, requirePrototypeContext } from '../core/prototype.js';
+import { isSyncEnabled } from '../core/prototype-runtime.js';
 import { withPrototypeLock } from '../core/lock.js';
 import { resolveSourcePaths, updateSourceRepo } from '../core/source.js';
 import { syncPrototype } from '../core/sync.js';
+import { getProjectConfig } from '../core/config.js';
 
 export function syncCommand() {
   const context = requirePrototypeContext(process.cwd());
@@ -11,6 +12,11 @@ export function syncCommand() {
 
   return withPrototypeLock(context.workspaceRoot, context.prototypeRoot, `prototype ${projectName}/${prototypeName}`, () => {
     const meta = loadMeta(context.metaPath);
+    if (!isSyncEnabled(meta)) {
+      const templateLabel = meta?.origin?.label || meta?.createdFrom?.templateKey || 'this template';
+      throw new Error(`${templateLabel} prototypes do not support sync.`);
+    }
+
     const projectConfig = getProjectConfig(context.workspaceRoot, meta.sourceProject);
 
     const { sourceRepoPath } = resolveSourcePaths(context.workspaceRoot, projectConfig);

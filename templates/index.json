@@ -1,0 +1,16 @@
+{
+  "templates": {
+    "nextjs-ts-tailwind": {
+      "label": "Next.js + TypeScript + Tailwind",
+      "projectName": "templates",
+      "path": "templates/nextjs-ts-tailwind",
+      "appPath": ".",
+      "installCommand": ["pnpm", "install", "--ignore-scripts"],
+      "devCommand": ["pnpm", "dev"],
+      "mock": {
+        "enabled": false
+      },
+      "sync": false
+    }
+  }
+}

@@ -120,6 +120,25 @@ function readProjects(rootPath) {
   return Object.keys(projects);
 }
 
+function readTemplates(rootPath) {
+  const templatesPath = path.join(rootPath, 'templates', 'index.json');
+  if (!fs.existsSync(templatesPath)) {
+    return [];
+  }
+
+  const parsed = JSON.parse(fs.readFileSync(templatesPath, 'utf8'));
+  const templates = parsed.templates || {};
+
+  return Object.entries(templates)
+    .map(([key, template]) => ({
+      key,
+      label: template.label || key,
+      projectName: template.projectName || 'templates',
+      sync: Boolean(template.sync)
+    }))
+    .sort((left, right) => left.label.localeCompare(right.label));
+}
+
 function readProjectsConfig(rootPath) {
   const projectsPath = path.join(rootPath, 'config', 'projects.json');
   if (!fs.existsSync(projectsPath)) {
@@ -222,6 +241,30 @@ function formatVersion(version) {
   return 'initializing';
 }
 
+function isTemplatePrototypeMeta(meta) {
+  return meta?.origin?.kind === 'template' || typeof meta?.createdFrom?.templateKey === 'string';
+}
+
+function syncEnabledForMeta(meta) {
+  if (typeof meta?.capabilities?.sync === 'boolean') {
+    return meta.capabilities.sync;
+  }
+
+  return !isTemplatePrototypeMeta(meta);
+}
+
+function formatPrototypeSource(meta) {
+  if (isTemplatePrototypeMeta(meta)) {
+    return meta?.origin?.label || meta?.createdFrom?.templateKey || 'template';
+  }
+
+  return meta?.lastSyncedSourceCommit ? meta.lastSyncedSourceCommit.slice(0, 7) : 'unknown';
+}
+
+function displayProjectGroupName(projectName) {
+  return projectName === 'templates' ? 'Templates' : projectName;
+}
+
 function listPrototypes(rootPath) {
   const prototypesRoot = path.join(rootPath, 'prototypes');
   if (!fs.existsSync(prototypesRoot)) {
@@ -254,7 +297,10 @@ function listPrototypes(rootPath) {
         label: `${projectName}/${prototypeName}`,
         version: meta.versioning?.currentVersion,
         status: meta.status || 'active',
-        sourceCommit: meta.lastSyncedSourceCommit || ''
+        sourceCommit: meta.lastSyncedSourceCommit || '',
+        sourceLabel: formatPrototypeSource(meta),
+        syncEnabled: syncEnabledForMeta(meta),
+        sourceKind: isTemplatePrototypeMeta(meta) ? 'template' : 'project'
       });
     }
   }
@@ -348,6 +394,28 @@ async function pickProject(rootPath) {
   return vscode.window.showQuickPick(projects, {
     placeHolder: 'Select a source project'
   });
+}
+
+async function pickTemplate(rootPath) {
+  const templates = readTemplates(rootPath);
+  if (templates.length === 0) {
+    vscode.window.showErrorMessage('No templates configured in templates/index.json.');
+    return null;
+  }
+
+  const selected = await vscode.window.showQuickPick(
+    templates.map((template) => ({
+      label: template.label,
+      description: template.sync ? 'sync enabled' : 'no sync',
+      detail: template.key,
+      item: template
+    })),
+    {
+      placeHolder: 'Select a built-in template'
+    }
+  );
+
+  return selected?.item || null;
 }
 
 async function pickPrototype(rootPath, placeHolder = 'Select a prototype') {
@@ -638,7 +706,7 @@ class ProtoSidebarProvider {
         const activeCount = group.prototypes.length;
         return new ProtoSidebarNode({
           nodeType: 'project-group',
-          label: group.projectName,
+          label: displayProjectGroupName(group.projectName),
           description: `${activeCount} prototype${activeCount === 1 ? '' : 's'}`,
           collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
           iconPath: new vscode.ThemeIcon('repo'),
@@ -655,11 +723,10 @@ class ProtoSidebarProvider {
       }
 
       return group.prototypes.map((prototype) => {
-        const sourceCommit = prototype.sourceCommit ? prototype.sourceCommit.slice(0, 7) : 'unknown';
         return new ProtoSidebarNode({
           nodeType: 'prototype',
           label: prototype.prototypeName,
-          description: `${formatVersion(prototype.version)} • ${prototype.status} • ${sourceCommit}`,
+          description: `${formatVersion(prototype.version)} • ${prototype.status} • ${prototype.sourceLabel}`,
           tooltip: prototype.prototypeRoot,
           collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
           iconPath: new vscode.ThemeIcon('folder'),
@@ -669,7 +736,7 @@ class ProtoSidebarProvider {
     }
 
     if (element.nodeType === 'prototype') {
-      return [
+      const nodes = [
         this.createActionNode('Run', 'uxProto.run', element.prototype, 'play-circle'),
         this.createActionNode('Open Claude', 'uxProto.openClaude', element.prototype, 'comment-discussion'),
         this.createActionNode('Open Codex', 'uxProto.openCodex', element.prototype, 'terminal'),
@@ -682,9 +749,14 @@ class ProtoSidebarProvider {
           iconPath: new vscode.ThemeIcon('history'),
           prototype: element.prototype
         }),
-        this.createActionNode('Sync', 'uxProto.sync', element.prototype, 'sync'),
         this.createActionNode('Archive', 'uxProto.archive', element.prototype, 'archive')
       ];
+
+      if (element.prototype.syncEnabled) {
+        nodes.splice(nodes.length - 1, 0, this.createActionNode('Sync', 'uxProto.sync', element.prototype, 'sync'));
+      }
+
+      return nodes;
     }
 
     if (element.nodeType === 'versions-group') {
@@ -848,9 +920,43 @@ function activate(context) {
 
   register(context, sidebarProvider, 'uxProto.create', async (projectArg) => {
     const rootPath = ensureRootOrThrow();
-    const project = typeof projectArg === 'string' ? projectArg : await pickProject(rootPath);
+    let createMode = 'project';
+    let project = typeof projectArg === 'string' ? projectArg : null;
+    let template = null;
+
     if (!project) {
-      return;
+      const selectedMode = await vscode.window.showQuickPick([
+        {
+          label: 'Source project',
+          description: 'Create a syncable prototype from a configured repository',
+          mode: 'project'
+        },
+        {
+          label: 'Built-in template',
+          description: 'Create a local prototype with no sync',
+          mode: 'template'
+        }
+      ], {
+        title: 'Create Prototype',
+        placeHolder: 'Choose how to create the prototype'
+      });
+
+      if (!selectedMode) {
+        return;
+      }
+
+      createMode = selectedMode.mode;
+      if (createMode === 'project') {
+        project = await pickProject(rootPath);
+        if (!project) {
+          return;
+        }
+      } else {
+        template = await pickTemplate(rootPath);
+        if (!template) {
+          return;
+        }
+      }
     }
 
     const prototypeName = await vscode.window.showInputBox({
@@ -869,6 +975,16 @@ function activate(context) {
     });
 
     if (!prototypeName) {
+      return;
+    }
+
+    if (createMode === 'template') {
+      runCommand(
+        rootPath,
+        rootPath,
+        ['create', '--template', template.key, prototypeName.trim()],
+        `create ${template.key}/${prototypeName.trim()}`
+      );
       return;
     }
 

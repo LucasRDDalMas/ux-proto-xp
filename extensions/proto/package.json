@@ -2,7 +2,7 @@
   "name": "proto",
   "displayName": "Proto",
   "description": "Interactive VS Code commands for ux-proto workflows.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "local",
   "engines": {
     "vscode": "^1.85.0"

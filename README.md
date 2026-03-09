@@ -31,6 +31,12 @@ make sources
 node cli/src/index.js create project-root my-prototype
 ```
 
+Or start from the built-in empty Next.js template:
+
+```bash
+node cli/src/index.js create --template nextjs-ts-tailwind my-template-prototype
+```
+
 4. Move into the prototype and run/save.
 
 ```bash
@@ -89,6 +95,15 @@ Or install globally from this folder and use `proto`.
 - writes `.uxproto/meta.json` and `.uxproto/versions/index.json`
 - runs install command
 - creates initial version `v0`
+
+### `proto create --template <template-key> <prototype-name>`
+
+- copies the built-in template into `prototypes/templates/<prototype-name>`
+- initializes hidden repo at `.ux-proto/repos/templates/<prototype-name>.git`
+- writes `.uxproto/meta.json` and `.uxproto/versions/index.json`
+- runs the template install command
+- creates initial version `v0`
+- template prototypes do not support `proto sync`
 
 ### `proto save [--comment "..."]`
 
@@ -173,6 +188,7 @@ The extension is located at `extensions/proto`.
 The sidebar `Actions` section can also onboard a new repository by appending a project entry to `config/projects.json` and optionally running `make sources` immediately.
 `Save State` stages normal workspace changes with `git add -A`, then commits and pushes with the default checkpoint message `chore: checkpoint ux-proto workspace state`. `projects/` stays out because it is ignored by `.gitignore`.
 Each prototype in the sidebar also exposes a `Versions` subtree, and each version row has an inline rollback action with confirmation.
+`Create Prototype` now lets you choose between a configured source project and a built-in template. The bundled template is `Next.js + TypeScript + Tailwind`, and template-based prototypes do not show a Sync action.
 
 Note:
 - Extension development always runs in a separate window from the one where you edit the extension source.
@@ -185,5 +201,5 @@ Note:
 ```bash
 cd extensions/proto
 npx @vscode/vsce package
-code --install-extension proto-0.0.1.vsix
+code --install-extension proto-0.0.3.vsix
 ```

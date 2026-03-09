@@ -6,12 +6,13 @@ Interactive sidebar + command-palette extension for `ux-proto` workflows.
 
 - Open the `Proto` icon in the VS Code Activity Bar.
 - `Actions` section provides workspace-level commands.
-- `Prototypes` section groups prototypes by project; expand a project, then expand a prototype to run `run/save/history/rollback/sync/archive`.
+- `Prototypes` section groups prototypes by project; expand a project, then expand a prototype to run `run/save/versions/sync/archive`.
 - Each prototype includes a `Versions` subtree with every saved version.
 - Version rows include an inline rollback action and confirm before running the rollback.
 - The sidebar auto-refreshes when prototype metadata/version files change.
 - Use the refresh button in the view title to force a reload.
 - Use `Onboard Repository` to add a new project entry to `config/projects.json` from the UI.
+- `Create Prototype` lets you choose either a source project or a built-in template. Template prototypes are grouped under `Templates` and do not expose `Sync`.
 
 ## Commands
 

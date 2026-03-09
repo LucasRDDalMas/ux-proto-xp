@@ -1,8 +1,8 @@
 import path from 'node:path';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
-import { getProjectConfig, normalizeCommand } from '../core/config.js';
 import { loadMeta, requirePrototypeContext } from '../core/prototype.js';
+import { loadPrototypeRuntime } from '../core/prototype-runtime.js';
 
 function waitForExit(child) {
   return new Promise((resolve) => {
@@ -65,8 +65,8 @@ async function waitForMockReady(mockProcess, port, timeoutMs = 6000) {
 export async function runCommandHandler() {
   const context = requirePrototypeContext(process.cwd());
   const meta = loadMeta(context.metaPath);
-  const projectConfig = getProjectConfig(context.workspaceRoot, meta.sourceProject);
-  const devCommand = normalizeCommand(projectConfig.devCommand, 'devCommand');
+  const runtime = loadPrototypeRuntime(context.workspaceRoot, meta);
+  const devCommand = runtime.devCommand;
 
   let mockProcess = null;
   const mockPort = Number.parseInt(process.env.UXPROTO_MOCK_PORT || '4010', 10);
@@ -74,7 +74,7 @@ export async function runCommandHandler() {
     throw new Error(`Invalid UXPROTO_MOCK_PORT value: ${process.env.UXPROTO_MOCK_PORT || '4010'}`);
   }
 
-  if (meta.mock?.enabled) {
+  if (runtime.mock.enabled) {
     const mockScript = path.join(context.workspaceRoot, 'cli', 'src', 'runtime', 'mock-server.js');
 
     mockProcess = spawn(process.execPath, [mockScript, context.prototypeRoot, String(mockPort)], {

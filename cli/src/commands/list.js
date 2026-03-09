@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { listDirectories, exists } from '../core/fs.js';
 import { loadMeta } from '../core/prototype.js';
+import { displaySource, isTemplatePrototype } from '../core/prototype-runtime.js';
 import { requireWorkspaceRoot } from '../core/workspace.js';
 
 function printGroup(title, entries) {
@@ -43,7 +44,11 @@ function listActive(workspaceRoot) {
         continue;
       }
       const meta = loadMeta(metaPath);
-      rows.push(`${prototypeName}   v${meta.versioning.currentVersion}   ${meta.status}   source:${shortCommit(meta.lastSyncedSourceCommit)}`);
+      if (isTemplatePrototype(meta)) {
+        rows.push(`${prototypeName}   v${meta.versioning.currentVersion}   ${meta.status}   template:${displaySource(meta)}`);
+      } else {
+        rows.push(`${prototypeName}   v${meta.versioning.currentVersion}   ${meta.status}   source:${shortCommit(meta.lastSyncedSourceCommit)}`);
+      }
     }
 
     printGroup(projectName, rows);
@@ -73,7 +78,11 @@ function listArchive(workspaceRoot) {
 
       const meta = loadMeta(archiveMetaPath);
       const version = meta.versioning?.currentVersion ?? '?';
-      rows.push(`${archiveEntry}   v${version}   ${meta.status}   source:${shortCommit(meta.lastSyncedSourceCommit)}`);
+      if (isTemplatePrototype(meta)) {
+        rows.push(`${archiveEntry}   v${version}   ${meta.status}   template:${displaySource(meta)}`);
+      } else {
+        rows.push(`${archiveEntry}   v${version}   ${meta.status}   source:${shortCommit(meta.lastSyncedSourceCommit)}`);
+      }
     }
 
     printGroup(projectName, rows);

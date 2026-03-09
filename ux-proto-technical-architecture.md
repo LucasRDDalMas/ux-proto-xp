@@ -184,7 +184,7 @@ Invariants:
 
 ## 7.1 Location Rules
 
-- `proto create <project> <name>`: workspace root only.
+- `proto create <project> <name>` and `proto create --template <template> <name>`: workspace root only.
 - `proto list`, `proto list archive`: anywhere inside workspace.
 - `proto save`, `proto history`, `proto rollback`, `proto run`, `proto sync`: inside a prototype only.
 
@@ -217,6 +217,27 @@ Failure handling:
 - If any step fails after copy starts, clean both:
   - `prototypes/<project>/<name>`
   - `.ux-proto/repos/<project>/<name>.git`
+
+## 7.2b `proto create --template <template> <name>`
+
+Flow:
+
+1. Resolve workspace root.
+2. Load and validate `templates/index.json`.
+3. Validate `<template>` exists.
+4. Validate destination `prototypes/templates/<name>` does not exist.
+5. Copy template app subtree into prototype working tree.
+6. Initialize hidden Git dir at `.ux-proto/repos/templates/<name>.git`.
+7. Initialize `.uxproto/meta.json` and `.uxproto/versions/index.json`.
+8. Mark metadata as template-backed and set `capabilities.sync = false`.
+9. Run template install command in prototype directory.
+10. Create initial save as `v0`.
+11. Print success plus `cd` and `proto run` guidance.
+
+Rules:
+
+- Template-backed prototypes do not support `proto sync`.
+- `proto run`, `proto save`, `proto rollback`, `proto archive`, and history/version flows work the same as source-backed prototypes.
 
 ## 7.3 `proto save [--comment "..."]`
 

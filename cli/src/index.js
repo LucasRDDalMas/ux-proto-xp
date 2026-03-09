@@ -13,6 +13,7 @@ function usage() {
   console.log('Usage: proto <command> [args]');
   console.log('Commands:');
   console.log('  create <project> <prototype-name>');
+  console.log('  create --template <template-key> <prototype-name>');
   console.log('  save [--comment "..."]');
   console.log('  history');
   console.log('  rollback <version-number>');
