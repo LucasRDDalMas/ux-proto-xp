@@ -1,5 +1,7 @@
 import path from 'node:path';
 import { requirePrototypeContext, loadMeta } from '../core/prototype.js';
+import { parsePrototypeIdentity } from '../core/prototype.js';
+import { withPrototypeLock } from '../core/lock.js';
 import { saveVersion } from '../core/versioning.js';
 
 function parseComment(args) {
@@ -17,29 +19,32 @@ function parseComment(args) {
 
 export function saveCommand(args) {
   const context = requirePrototypeContext(process.cwd());
-  const meta = loadMeta(context.metaPath);
+  const { projectName, prototypeName } = parsePrototypeIdentity(context.workspaceRoot, context.prototypeRoot);
 
-  const gitDir = path.join(context.workspaceRoot, meta.storage.gitDir);
-  const comment = parseComment(args);
+  return withPrototypeLock(context.workspaceRoot, context.prototypeRoot, `prototype ${projectName}/${prototypeName}`, () => {
+    const meta = loadMeta(context.metaPath);
+    const gitDir = path.join(context.workspaceRoot, meta.storage.gitDir);
+    const comment = parseComment(args);
 
-  const result = saveVersion({
-    gitDir,
-    prototypeRoot: context.prototypeRoot,
-    versionsPath: context.versionsPath,
-    metaPath: context.metaPath,
-    meta,
-    comment,
-    allowEmpty: false
+    const result = saveVersion({
+      gitDir,
+      prototypeRoot: context.prototypeRoot,
+      versionsPath: context.versionsPath,
+      metaPath: context.metaPath,
+      meta,
+      comment,
+      allowEmpty: false
+    });
+
+    if (!result.saved) {
+      console.log('nothing to save');
+      return;
+    }
+
+    if (comment) {
+      console.log(`Saved v${result.version} - ${comment}`);
+    } else {
+      console.log(`Saved v${result.version}`);
+    }
   });
-
-  if (!result.saved) {
-    console.log('nothing to save');
-    return;
-  }
-
-  if (comment) {
-    console.log(`Saved v${result.version} - ${comment}`);
-  } else {
-    console.log(`Saved v${result.version}`);
-  }
 }

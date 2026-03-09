@@ -30,7 +30,7 @@ function exportSourceSnapshot(options) {
     }
 
     copyDirFiltered(sourceAppPath, destinationPath, {
-      excludeNames: new Set(['.git', 'node_modules', 'dist', 'build', '.cache'])
+      excludeNames: new Set(['.git', 'node_modules', '.cache'])
     });
   } finally {
     runGit(['worktree', 'remove', '--force', worktreePath], {
@@ -135,7 +135,7 @@ export function syncPrototype(options) {
     });
 
     copyDirFiltered(prototypeRoot, oursPath, {
-      excludeNames: new Set(['.uxproto', 'node_modules', 'dist', 'build', '.cache'])
+      excludeNames: new Set(['.uxproto', 'node_modules', '.cache'])
     });
 
     const merge = buildMergeResult(basePath, oursPath, theirsPath, tmpRoot);

@@ -1,33 +1,11 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { loadProjectsConfig } from '../core/config.js';
+import { printCliError } from '../core/errors.js';
+import { withSourceRepoLock } from '../core/lock.js';
+import { runCommand } from '../core/shell.js';
 import { requireWorkspaceRoot } from '../core/workspace.js';
-
-function runCommand(command, args, options = {}) {
-  const { cwd, allowFailure = false } = options;
-  const result = spawnSync(command, args, {
-    cwd,
-    encoding: 'utf8',
-    stdio: 'pipe'
-  });
-
-  if (result.error) {
-    throw new Error(`Failed to execute ${command}: ${result.error.message}`);
-  }
-
-  const exitCode = result.status ?? 1;
-  const stdout = result.stdout || '';
-  const stderr = result.stderr || '';
-
-  if (exitCode !== 0 && !allowFailure) {
-    const details = stderr.trim() || stdout.trim() || 'unknown error';
-    throw new Error(`Command failed: ${command} ${args.join(' ')}\n${details}`);
-  }
-
-  return { exitCode, stdout, stderr };
-}
 
 function git(cwd, args, options = {}) {
   return runCommand('git', args, { cwd, ...options });
@@ -96,17 +74,19 @@ function syncProject(workspaceRoot, projectName, projectConfig) {
   const sourceUrl = projectConfig.sourceUrl;
   const sourceBranch = projectConfig.sourceBranch;
 
-  if (fs.existsSync(sourcePath)) {
-    const gitPath = path.join(sourcePath, '.git');
-    if (!fs.existsSync(gitPath)) {
-      throw new Error(`Path exists but is not a Git repository for ${projectName}: ${sourcePath}`);
+  return withSourceRepoLock(workspaceRoot, sourcePath, `source repo ${projectName}`, () => {
+    if (fs.existsSync(sourcePath)) {
+      const gitPath = path.join(sourcePath, '.git');
+      if (!fs.existsSync(gitPath)) {
+        throw new Error(`Path exists but is not a Git repository for ${projectName}: ${sourcePath}`);
+      }
+
+      updateExistingRepo(projectName, sourcePath, sourceUrl, sourceBranch);
+      return;
     }
 
-    updateExistingRepo(projectName, sourcePath, sourceUrl, sourceBranch);
-    return;
-  }
-
-  cloneRepo(projectName, sourcePath, sourceUrl, sourceBranch);
+    cloneRepo(projectName, sourcePath, sourceUrl, sourceBranch);
+  });
 }
 
 function main() {
@@ -129,6 +109,6 @@ function main() {
 try {
   main();
 } catch (error) {
-  console.error(`Error: ${error.message}`);
+  printCliError(error);
   process.exit(1);
 }

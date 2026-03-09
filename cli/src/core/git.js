@@ -45,8 +45,6 @@ export function initHiddenRepo(gitDir, workTree) {
     '.uxproto/versions/index.json',
     '.uxproto/logs/',
     'node_modules/',
-    'dist/',
-    'build/',
     '.cache/',
     '.DS_Store'
   ];

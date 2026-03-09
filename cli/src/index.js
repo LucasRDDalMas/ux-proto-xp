@@ -7,6 +7,7 @@ import { listCommand } from './commands/list.js';
 import { runCommandHandler } from './commands/run.js';
 import { syncCommand } from './commands/sync.js';
 import { archiveCommand } from './commands/archive.js';
+import { printCliError } from './core/errors.js';
 
 function usage() {
   console.log('Usage: proto <command> [args]');
@@ -60,6 +61,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(`Error: ${error.message}`);
+  printCliError(error);
   process.exit(1);
 });

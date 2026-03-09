@@ -2,8 +2,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { isWorkTreeClean, runGit } from '../core/git.js';
+import { withPrototypeLock } from '../core/lock.js';
 import { replaceDirectoryContents, removeIfExists } from '../core/fs.js';
 import { requirePrototypeContext, loadMeta, loadVersions, saveVersions } from '../core/prototype.js';
+import { parsePrototypeIdentity } from '../core/prototype.js';
 import { findVersionByNumber, saveVersion } from '../core/versioning.js';
 
 export function rollbackCommand(args) {
@@ -18,53 +20,56 @@ export function rollbackCommand(args) {
   }
 
   const context = requirePrototypeContext(process.cwd());
-  const meta = loadMeta(context.metaPath);
-  const versionsData = loadVersions(context.versionsPath);
-  const gitDir = path.join(context.workspaceRoot, meta.storage.gitDir);
+  const { projectName, prototypeName } = parsePrototypeIdentity(context.workspaceRoot, context.prototypeRoot);
 
-  if (!isWorkTreeClean(gitDir, context.prototypeRoot)) {
-    throw new Error('Unsaved changes detected. Run proto save before rollback.');
-  }
+  return withPrototypeLock(context.workspaceRoot, context.prototypeRoot, `prototype ${projectName}/${prototypeName}`, () => {
+    const meta = loadMeta(context.metaPath);
+    const versionsData = loadVersions(context.versionsPath);
+    const gitDir = path.join(context.workspaceRoot, meta.storage.gitDir);
 
-  const target = findVersionByNumber(context.versionsPath, versionNumber);
-  if (!target) {
-    throw new Error(`Version v${versionNumber} does not exist.`);
-  }
+    if (!isWorkTreeClean(gitDir, context.prototypeRoot)) {
+      throw new Error('Unsaved changes detected. Run proto save before rollback.');
+    }
 
-  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'uxproto-rollback-'));
-  const tempWorktree = path.join(tmpRoot, 'snapshot-worktree');
+    const target = findVersionByNumber(context.versionsPath, versionNumber);
+    if (!target) {
+      throw new Error(`Version v${versionNumber} does not exist.`);
+    }
 
-  try {
-    runGit(['worktree', 'add', '--detach', tempWorktree, target.commit], {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'uxproto-rollback-'));
+    const tempWorktree = path.join(tmpRoot, 'snapshot-worktree');
+
+    try {
+      runGit(['worktree', 'add', '--detach', tempWorktree, target.commit], {
+        gitDir,
+        workTree: context.prototypeRoot
+      });
+
+      replaceDirectoryContents(context.prototypeRoot, tempWorktree, {
+        excludeSourceNames: new Set(['.git'])
+      });
+
+      saveVersions(context.versionsPath, versionsData.versions);
+      meta.versioning.currentVersion = versionsData.versions.at(-1)?.number ?? -1;
+    } finally {
+      runGit(['worktree', 'remove', '--force', tempWorktree], {
+        gitDir,
+        workTree: context.prototypeRoot,
+        allowFailure: true
+      });
+      removeIfExists(tmpRoot);
+    }
+
+    const result = saveVersion({
       gitDir,
-      workTree: context.prototypeRoot
+      prototypeRoot: context.prototypeRoot,
+      versionsPath: context.versionsPath,
+      metaPath: context.metaPath,
+      meta,
+      comment: `rollback to v${versionNumber}`,
+      allowEmpty: true
     });
 
-    replaceDirectoryContents(context.prototypeRoot, tempWorktree, {
-      excludeSourceNames: new Set(['.git'])
-    });
-
-    // Keep control-plane files in working tree state; they are not versioned.
-    saveVersions(context.versionsPath, versionsData.versions);
-    meta.versioning.currentVersion = versionsData.versions.at(-1)?.number ?? -1;
-  } finally {
-    runGit(['worktree', 'remove', '--force', tempWorktree], {
-      gitDir,
-      workTree: context.prototypeRoot,
-      allowFailure: true
-    });
-    removeIfExists(tmpRoot);
-  }
-
-  const result = saveVersion({
-    gitDir,
-    prototypeRoot: context.prototypeRoot,
-    versionsPath: context.versionsPath,
-    metaPath: context.metaPath,
-    meta,
-    comment: `rollback to v${versionNumber}`,
-    allowEmpty: true
+    console.log(`Rolled back to v${versionNumber}. New current version: v${result.version}`);
   });
-
-  console.log(`Rolled back to v${versionNumber}. New current version: v${result.version}`);
 }

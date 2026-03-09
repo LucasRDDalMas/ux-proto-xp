@@ -456,7 +456,7 @@ async function promptForOnboarding(rootPath) {
   const installCommandText = await vscode.window.showInputBox({
     title: 'Onboard Repository',
     prompt: 'Install command',
-    value: 'pnpm install',
+    value: 'pnpm install --ignore-scripts',
     validateInput: (value) => value.trim() ? null : 'Install command is required.'
   });
 

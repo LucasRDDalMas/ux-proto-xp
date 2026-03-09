@@ -26,13 +26,16 @@ export function runCommand(command, args = [], options = {}) {
   const stdout = typeof result.stdout === 'string' ? result.stdout : '';
   const stderr = typeof result.stderr === 'string' ? result.stderr : '';
   const exitCode = result.status ?? 1;
+  const signal = result.signal ?? null;
 
   if (result.error) {
     throw new CommandError(`Failed to execute ${command}: ${result.error.message}`, {
       command,
       args,
       cwd,
-      error: result.error
+      error: result.error,
+      stdout,
+      stderr
     });
   }
 
@@ -44,6 +47,7 @@ export function runCommand(command, args = [], options = {}) {
         args,
         cwd,
         exitCode,
+        signal,
         stdout,
         stderr
       }
@@ -55,6 +59,7 @@ export function runCommand(command, args = [], options = {}) {
     args,
     cwd,
     exitCode,
+    signal,
     stdout,
     stderr
   };

@@ -3,6 +3,7 @@ import { getProjectConfig, normalizeCommand } from '../core/config.js';
 import { copyDirFiltered, ensureDir, exists, removeIfExists, writeJson } from '../core/fs.js';
 import { initHiddenRepo } from '../core/git.js';
 import { prototypePaths } from '../core/prototype.js';
+import { withPrototypeLock } from '../core/lock.js';
 import { runCommand } from '../core/shell.js';
 import { resolveSourcePaths, updateSourceRepo } from '../core/source.js';
 import { saveVersion, initVersionFiles } from '../core/versioning.js';
@@ -70,63 +71,69 @@ export function createCommand(args) {
   const { sourceRepoPath, sourceAppPath } = resolveSourcePaths(workspaceRoot, projectConfig);
 
   const paths = prototypePaths(workspaceRoot, projectName, prototypeName);
-  if (exists(paths.prototypeRoot)) {
-    throw new Error(`Prototype already exists: ${paths.prototypeRoot}`);
-  }
 
-  const gitDirRel = `.ux-proto/repos/${projectName}/${prototypeName}.git`;
-  const gitDirAbs = path.join(workspaceRoot, gitDirRel);
-
-  let copied = false;
-
-  try {
-    const latestSourceCommit = updateSourceRepo(sourceRepoPath, projectConfig.sourceBranch);
-
-    copyDirFiltered(sourceAppPath, paths.prototypeRoot, {
-      excludeNames: new Set(['.git', 'node_modules', 'dist', 'build', '.cache'])
-    });
-    copied = true;
-
-    ensureDir(paths.uxprotoRoot);
-    initHiddenRepo(gitDirAbs, paths.prototypeRoot);
-    initVersionFiles(paths.versionsPath);
-
-    const meta = createMetadata({
-      projectName,
-      prototypeName,
-      projectConfig,
-      sourceCommit: latestSourceCommit,
-      gitDirRel
-    });
-
-    writeJson(paths.metaPath, meta);
-    initializeMockFiles(paths.prototypeRoot, projectConfig);
-
-    const installCommand = normalizeCommand(projectConfig.installCommand, 'installCommand');
-    runCommand(installCommand[0], installCommand.slice(1), {
-      cwd: paths.prototypeRoot,
-      stdio: 'inherit'
-    });
-
-    const save = saveVersion({
-      gitDir: gitDirAbs,
-      prototypeRoot: paths.prototypeRoot,
-      versionsPath: paths.versionsPath,
-      metaPath: paths.metaPath,
-      meta,
-      comment: 'initial',
-      allowEmpty: true
-    });
-
-    console.log(`Created prototype ${projectName}/${prototypeName} at ${paths.prototypeRoot}`);
-    console.log(`Initialized version v${save.version}`);
-    console.log(`Next: cd ${paths.prototypeRoot}`);
-    console.log('Then: proto run');
-  } catch (error) {
-    if (copied) {
-      removeIfExists(paths.prototypeRoot);
+  return withPrototypeLock(workspaceRoot, paths.prototypeRoot, `prototype ${projectName}/${prototypeName}`, () => {
+    if (exists(paths.prototypeRoot)) {
+      throw new Error(`Prototype already exists: ${paths.prototypeRoot}`);
     }
-    removeIfExists(gitDirAbs);
-    throw error;
-  }
+
+    const gitDirRel = `.ux-proto/repos/${projectName}/${prototypeName}.git`;
+    const gitDirAbs = path.join(workspaceRoot, gitDirRel);
+
+    let copied = false;
+
+    try {
+      const latestSourceCommit = updateSourceRepo(sourceRepoPath, projectConfig.sourceBranch, {
+        workspaceRoot,
+        lockLabel: `source repo ${projectName}`
+      });
+
+      copyDirFiltered(sourceAppPath, paths.prototypeRoot, {
+        excludeNames: new Set(['.git', 'node_modules', '.cache'])
+      });
+      copied = true;
+
+      ensureDir(paths.uxprotoRoot);
+      initHiddenRepo(gitDirAbs, paths.prototypeRoot);
+      initVersionFiles(paths.versionsPath);
+
+      const meta = createMetadata({
+        projectName,
+        prototypeName,
+        projectConfig,
+        sourceCommit: latestSourceCommit,
+        gitDirRel
+      });
+
+      writeJson(paths.metaPath, meta);
+      initializeMockFiles(paths.prototypeRoot, projectConfig);
+
+      const installCommand = normalizeCommand(projectConfig.installCommand, 'installCommand');
+      runCommand(installCommand[0], installCommand.slice(1), {
+        cwd: paths.prototypeRoot,
+        stdio: 'inherit'
+      });
+
+      const save = saveVersion({
+        gitDir: gitDirAbs,
+        prototypeRoot: paths.prototypeRoot,
+        versionsPath: paths.versionsPath,
+        metaPath: paths.metaPath,
+        meta,
+        comment: 'initial',
+        allowEmpty: true
+      });
+
+      console.log(`Created prototype ${projectName}/${prototypeName} at ${paths.prototypeRoot}`);
+      console.log(`Initialized version v${save.version}`);
+      console.log(`Next: cd ${paths.prototypeRoot}`);
+      console.log('Then: proto run');
+    } catch (error) {
+      if (copied) {
+        removeIfExists(paths.prototypeRoot);
+      }
+      removeIfExists(gitDirAbs);
+      throw error;
+    }
+  });
 }

@@ -58,7 +58,7 @@ Edit `config/projects.json`:
       "sourceUrl": "https://github.com/your-org/project-a.git",
       "sourceBranch": "main",
       "appPath": ".",
-      "installCommand": ["npm", "install"],
+      "installCommand": ["npm", "install", "--ignore-scripts"],
       "devCommand": ["npm", "run", "dev"],
       "mock": {
         "enabled": true,
