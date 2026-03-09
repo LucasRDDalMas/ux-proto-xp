@@ -23,6 +23,7 @@
     "onCommand:uxProto.listArchive",
     "onCommand:uxProto.run",
     "onCommand:uxProto.openClaude",
+    "onCommand:uxProto.openCodex",
     "onCommand:uxProto.sync",
     "onCommand:uxProto.archive",
     "onCommand:uxProto.refreshSidebar"
@@ -89,6 +90,10 @@
       {
         "command": "uxProto.openClaude",
         "title": "Proto: Open Claude"
+      },
+      {
+        "command": "uxProto.openCodex",
+        "title": "Proto: Open Codex"
       },
       {
         "command": "uxProto.sync",

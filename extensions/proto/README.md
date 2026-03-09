@@ -24,6 +24,7 @@ Interactive sidebar + command-palette extension for `ux-proto` workflows.
 - `Proto: List Archived Prototypes`
 - `Proto: Run Prototype`
 - `Proto: Open Claude`
+- `Proto: Open Codex`
 - `Proto: Sync Prototype`
 - `Proto: Archive Prototype`
 
@@ -35,6 +36,8 @@ Interactive sidebar + command-palette extension for `ux-proto` workflows.
 ## Notes
 
 - Extension locates workspace root by searching for `.ux-proto/workspace.json`.
-- Commands run in an integrated terminal so output is visible and long-running processes remain interactive.
+- Commands run in integrated terminals so output is visible and long-running processes remain interactive. Each action opens its own terminal session to avoid sending new commands into an already-running dev server or agent session.
+- Short-lived actions auto-close their terminal on success and stay open on failure. Long-running actions such as `Run`, `Open Claude`, and `Open Codex` stay open.
 - `Save State` stages normal workspace changes with `git add -A`, then commits and pushes using the default message `chore: checkpoint ux-proto workspace state`. `projects/` stays out because it is ignored by `.gitignore`.
 - `Open Claude` opens the shared terminal in the selected prototype folder and runs `claude`.
+- `Open Codex` opens the shared terminal in the selected prototype folder and runs `codex`.

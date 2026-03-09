@@ -46,17 +46,21 @@ function getConfig() {
   return vscode.workspace.getConfiguration('uxProto');
 }
 
-function getTerminal(rootPath) {
-  const terminalName = getConfig().get('terminalName', 'ux-proto');
-  const existing = vscode.window.terminals.find((term) => term.name === terminalName);
-  if (existing) {
-    return existing;
-  }
+function terminalBaseName() {
+  return getConfig().get('terminalName', 'ux-proto');
+}
 
+function createTerminal(rootPath, label, cwdPath = rootPath) {
+  const base = terminalBaseName();
+  const name = label ? `${base}: ${label}` : base;
   return vscode.window.createTerminal({
-    name: terminalName,
-    cwd: rootPath
+    name,
+    cwd: cwdPath
   });
+}
+
+function wrapAutoClose(command) {
+  return `${command}; cmd_status=$?; if [ $cmd_status -eq 0 ]; then exit 0; else echo "[ux-proto] command failed with exit $cmd_status"; fi`;
 }
 
 function resolveCliCommand(rootPath) {
@@ -73,33 +77,35 @@ function resolveCliCommand(rootPath) {
   return cliCommand.replace(relativeCliPath, shellQuote(path.join(rootPath, relativeCliPath)));
 }
 
-function runCommand(rootPath, cwdPath, args) {
+function runCommand(rootPath, cwdPath, args, label = args[0] || 'proto', options = {}) {
+  const { persistent = false } = options;
   const cliCommand = resolveCliCommand(rootPath);
-  const terminal = getTerminal(rootPath);
+  const terminal = createTerminal(rootPath, label, cwdPath);
+  const command = `${cliCommand} ${args.map(shellQuote).join(' ')}`;
 
   terminal.show(true);
-  terminal.sendText(`cd ${shellQuote(cwdPath)}`);
-  terminal.sendText(`${cliCommand} ${args.map(shellQuote).join(' ')}`);
+  terminal.sendText(persistent ? command : wrapAutoClose(command));
 }
 
-function runRawCommand(rootPath, command) {
-  const terminal = getTerminal(rootPath);
+function runRawCommand(rootPath, command, label = 'command', options = {}) {
+  const { persistent = false } = options;
+  const terminal = createTerminal(rootPath, label, rootPath);
   terminal.show(true);
-  terminal.sendText(`cd ${shellQuote(rootPath)}`);
-  terminal.sendText(command);
+  terminal.sendText(persistent ? command : wrapAutoClose(command));
 }
 
-function runTerminalCommand(rootPath, cwdPath, command) {
-  const terminal = getTerminal(rootPath);
+function runTerminalCommand(rootPath, cwdPath, command, label = 'shell', options = {}) {
+  const { persistent = true } = options;
+  const terminal = createTerminal(rootPath, label, cwdPath);
   terminal.show(true);
-  terminal.sendText(`cd ${shellQuote(cwdPath)}`);
-  terminal.sendText(command);
+  terminal.sendText(persistent ? command : wrapAutoClose(command));
 }
 
 function saveWorkspaceState(rootPath) {
   runRawCommand(
     rootPath,
-    "git add -A && (git diff --cached --quiet && echo 'No workspace changes to save.' || (git commit -m 'chore: checkpoint ux-proto workspace state' && git push))"
+    "git add -A && (git diff --cached --quiet && echo 'No workspace changes to save.' || (git commit -m 'chore: checkpoint ux-proto workspace state' && git push))",
+    'save-state'
   );
 }
 
@@ -666,6 +672,7 @@ class ProtoSidebarProvider {
       return [
         this.createActionNode('Run', 'uxProto.run', element.prototype, 'play-circle'),
         this.createActionNode('Open Claude', 'uxProto.openClaude', element.prototype, 'comment-discussion'),
+        this.createActionNode('Open Codex', 'uxProto.openCodex', element.prototype, 'terminal'),
         this.createActionNode('Save Version', 'uxProto.save', element.prototype, 'save'),
         new ProtoSidebarNode({
           nodeType: 'versions-group',
@@ -801,7 +808,7 @@ function activate(context) {
 
   register(context, sidebarProvider, 'uxProto.makeSources', async () => {
     const rootPath = ensureRootOrThrow();
-    runRawCommand(rootPath, 'make sources');
+    runRawCommand(rootPath, 'make sources', 'bootstrap-sources');
   });
 
   register(context, sidebarProvider, 'uxProto.saveState', async () => {
@@ -835,7 +842,7 @@ function activate(context) {
     );
 
     if (bootstrapChoice === 'Run make sources') {
-      runRawCommand(rootPath, 'make sources');
+      runRawCommand(rootPath, 'make sources', 'bootstrap-sources');
     }
   });
 
@@ -865,7 +872,7 @@ function activate(context) {
       return;
     }
 
-    runCommand(rootPath, rootPath, ['create', project, prototypeName.trim()]);
+    runCommand(rootPath, rootPath, ['create', project, prototypeName.trim()], `create ${project}/${prototypeName.trim()}`);
   });
 
   register(context, sidebarProvider, 'uxProto.save', async (prototypeArg) => {
@@ -886,7 +893,7 @@ function activate(context) {
       args.push('--comment', comment.trim());
     }
 
-    runCommand(rootPath, prototype.prototypeRoot, args);
+    runCommand(rootPath, prototype.prototypeRoot, args, `save ${prototype.prototypeName}`);
   });
 
   register(context, sidebarProvider, 'uxProto.rollbackToVersion', async (versionArg) => {
@@ -907,17 +914,17 @@ function activate(context) {
       return;
     }
 
-    runCommand(rootPath, prototype.prototypeRoot, ['rollback', String(versionNumber)]);
+    runCommand(rootPath, prototype.prototypeRoot, ['rollback', String(versionNumber)], `rollback ${prototype.prototypeName}`);
   });
 
   register(context, sidebarProvider, 'uxProto.list', async () => {
     const rootPath = ensureRootOrThrow();
-    runCommand(rootPath, rootPath, ['list']);
+    runCommand(rootPath, rootPath, ['list'], 'list');
   });
 
   register(context, sidebarProvider, 'uxProto.listArchive', async () => {
     const rootPath = ensureRootOrThrow();
-    runCommand(rootPath, rootPath, ['list', 'archive']);
+    runCommand(rootPath, rootPath, ['list', 'archive'], 'list archive');
   });
 
   register(context, sidebarProvider, 'uxProto.run', async (prototypeArg) => {
@@ -927,7 +934,7 @@ function activate(context) {
       return;
     }
 
-    runCommand(rootPath, prototype.prototypeRoot, ['run']);
+    runCommand(rootPath, prototype.prototypeRoot, ['run'], `run ${prototype.prototypeName}`, { persistent: true });
   });
 
   register(context, sidebarProvider, 'uxProto.openClaude', async (prototypeArg) => {
@@ -937,7 +944,17 @@ function activate(context) {
       return;
     }
 
-    runTerminalCommand(rootPath, prototype.prototypeRoot, 'claude');
+    runTerminalCommand(rootPath, prototype.prototypeRoot, 'claude', `claude ${prototype.prototypeName}`, { persistent: true });
+  });
+
+  register(context, sidebarProvider, 'uxProto.openCodex', async (prototypeArg) => {
+    const rootPath = ensureRootOrThrow();
+    const prototype = await resolvePrototype(rootPath, prototypeArg, 'Select prototype to open in Codex');
+    if (!prototype) {
+      return;
+    }
+
+    runTerminalCommand(rootPath, prototype.prototypeRoot, 'codex', `codex ${prototype.prototypeName}`, { persistent: true });
   });
 
   register(context, sidebarProvider, 'uxProto.sync', async (prototypeArg) => {
@@ -947,7 +964,7 @@ function activate(context) {
       return;
     }
 
-    runCommand(rootPath, prototype.prototypeRoot, ['sync']);
+    runCommand(rootPath, prototype.prototypeRoot, ['sync'], `sync ${prototype.prototypeName}`);
   });
 
   register(context, sidebarProvider, 'uxProto.archive', async (prototypeArg) => {
@@ -968,7 +985,7 @@ function activate(context) {
       return;
     }
 
-    runCommand(rootPath, prototype.prototypeRoot, action.args);
+    runCommand(rootPath, prototype.prototypeRoot, action.args, `archive ${prototype.prototypeName}`);
   });
 }
 

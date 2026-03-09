@@ -166,6 +166,7 @@ The extension is located at `extensions/proto`.
    - `Proto: Onboard Repository`
    - `Proto: Create Prototype`
    - `Proto: Open Claude`
+   - `Proto: Open Codex`
    - `Proto: Save Version`
    - `Proto: Sync Prototype`
 
@@ -177,6 +178,7 @@ Note:
 - Extension development always runs in a separate window from the one where you edit the extension source.
 - This workspace includes `.vscode/launch.json` with `--extensionDevelopmentPath=${workspaceFolder}/extensions/proto` and `${workspaceFolder}` so VS Code loads the correct extension and opens the project at the same time.
 - If you want to use the extension in a single normal VS Code window, install the `.vsix` instead of using `F5`.
+- Each sidebar action opens its own integrated terminal session, so long-running commands like `run`, `claude`, and `codex` do not get mixed with later commands. Short-lived actions auto-close on success and stay open on failure.
 
 ### Optional: install as local `.vsix`
 
